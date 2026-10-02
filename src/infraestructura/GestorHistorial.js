@@ -40,10 +40,27 @@ class GestorHistorial {
         // Solo guardamos si es DISPONIBLE o NO_DISPONIBLE.
         // Si es ERROR por un bloqueo o timeout temporal, preferimos no registrarlo para poder reintentar luego.
         // (Opcionalmente, se podría registrar el error pero la regla dice que los errores no se deben contabilizar como "sin WhatsApp")
-        if (estado === 'DISPONIBLE' || estado === 'NO_DISPONIBLE') {
+        if (estado === 'DISPONIBLE' || estado === 'NO_DISPONIBLE' || estado === 'FORMATO_INVALIDO') {
             this.historial[numero] = estado;
             this._guardarHistorial();
         }
+    }
+
+    obtenerMetricas() {
+        const entradas = Object.entries(this.historial);
+        const totalEscaneados = entradas.length;
+        const conWhatsApp = entradas.filter(([_, estado]) => estado === 'DISPONIBLE').length;
+        const sinWhatsApp = entradas.filter(([_, estado]) => estado === 'NO_DISPONIBLE');
+        const formatoInvalido = entradas.filter(([_, estado]) => estado === 'FORMATO_INVALIDO').length;
+        
+        return {
+            totalEscaneados,
+            totalValidados: totalEscaneados, 
+            conWhatsApp,
+            sinWhatsApp: sinWhatsApp.length,
+            formatoInvalido,
+            listaSinWhatsApp: sinWhatsApp.map(([numero]) => numero)
+        };
     }
 }
 

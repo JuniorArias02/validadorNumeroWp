@@ -4,7 +4,12 @@ class ValidarListaNumeros {
         this.escritorResultados = escritorResultados;
         this.servicioWhatsApp = servicioWhatsApp;
         this.gestorHistorial = gestorHistorial;
-        this.LIMITE_POR_SESION = 20;
+    }
+
+    _esFormatoValido(numero) {
+        // En Colombia (y por el prefijo 57), el número debe ser de exactamente 10 dígitos y solo números.
+        const regex = /^\d{10}$/;
+        return regex.test(numero);
     }
 
     async ejecutar(rutaArchivoEntrada) {
@@ -18,17 +23,23 @@ class ValidarListaNumeros {
             return;
         }
 
-        // Tomamos máximo 20
-        const numerosAProcesar = numerosPendientes.slice(0, this.LIMITE_POR_SESION);
+        const numerosAProcesar = numerosPendientes;
 
         console.log(`De ${numerosCompletos.length} números, ${numerosPendientes.length} son nuevos.`);
-        console.log(`Iniciando la validación del lote de ${numerosAProcesar.length} números...`);
+        console.log(`Iniciando la validación de todos los números nuevos (${numerosAProcesar.length})...`);
         
         await this.servicioWhatsApp.iniciar();
 
         for (let i = 0; i < numerosAProcesar.length; i++) {
             const numeroActual = numerosAProcesar[i];
             console.log(`\n--- [${i + 1}/${numerosAProcesar.length}] Validando: ${numeroActual} ---`);
+            
+            if (!this._esFormatoValido(numeroActual)) {
+                console.log(`El número ${numeroActual} tiene un formato incorrecto. Se marca como inválido y se salta.`);
+                this.escritorResultados.guardarResultado(numeroActual, 'FORMATO_INVALIDO');
+                this.gestorHistorial.registrarNumero(numeroActual, 'FORMATO_INVALIDO');
+                continue; // Saltamos a la siguiente iteración
+            }
             
             try {
                 const tieneWhatsApp = await this.servicioWhatsApp.validarNumero(numeroActual);

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Contactos - Validador WhatsApp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --primary: #25D366; /* WhatsApp Green */
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .status-badge {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-badge.updating {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            border-top: 4px solid var(--info);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-card.success { border-top-color: var(--primary); }
+        .metric-card.danger { border-top-color: var(--danger); }
+        .metric-card.warning { border-top-color: #f59e0b; }
+
+        .metric-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .table-container {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Monitoreo de Validación</h1>
+            <div id="statusIndicator" class="status-badge">
+                <span class="status-dot"></span>
+                <span id="statusText">Actualizado</span>
+            </div>
+        </header>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Escaneados / Validados</div>
+                <div class="metric-value" id="valTotal">0</div>
+            </div>
+            <div class="metric-card success">
+                <div class="metric-title">Con WhatsApp</div>
+                <div class="metric-value" id="valSuccess">0</div>
+            </div>
+            <div class="metric-card danger">
+                <div class="metric-title">Sin WhatsApp</div>
+                <div class="metric-value" id="valDanger">0</div>
+            </div>
+            <div class="metric-card warning">
+                <div class="metric-title">Formato Inválido</div>
+                <div class="metric-value" id="valWarning">0</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                <h2>Usuarios SIN WhatsApp</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Número de Teléfono</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="3">
+                            <div class="empty-state">Cargando datos...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const endpoint = '/api/metricas';
+        const refreshRate = 3000; // 3 segundos
+
+        async function fetchMetricas() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            try {
+                statusIndicator.classList.add('updating');
+                statusText.innerText = 'Actualizando...';
+
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                // Update metrics
+                document.getElementById('valTotal').innerText = data.totalEscaneados;
+                document.getElementById('valSuccess').innerText = data.conWhatsApp;
+                document.getElementById('valDanger').innerText = data.sinWhatsApp;
+                document.getElementById('valWarning').innerText = data.formatoInvalido;
+
+                // Update table
+                const tableBody = document.getElementById('tableBody');
+                if (data.listaSinWhatsApp.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="3">
+                                <div class="empty-state">No hay usuarios registrados sin WhatsApp aún.</div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tableBody.innerHTML = '';
+                    data.listaSinWhatsApp.forEach((numero, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td style="font-family: monospace; font-size: 1rem;">${numero}</td>
+                            <td><span class="badge">No disponible</span></td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                }
+
+                statusIndicator.classList.remove('updating');
+                statusText.innerText = 'Actualizado';
+
+            } catch (error) {
+                console.error("Error obteniendo métricas:", error);
+                statusIndicator.classList.remove('updating');
+                statusIndicator.style.backgroundColor = '#fee2e2';
+                statusIndicator.style.color = '#991b1b';
+                statusText.innerText = 'Error de conexión';
+            }
+        }
+
+        // Initial fetch
+        fetchMetricas();
+
+        // Polling
+        setInterval(fetchMetricas, refreshRate);
+    </script>
+</body>
+</html>

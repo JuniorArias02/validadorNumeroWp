@@ -12,7 +12,8 @@ class ServicioWhatsAppNavegador {
     async iniciar() {
         this.navegador = await puppeteer.launch({
             headless: false, // Debe verse para poder escanear el QR inicialmente
-            userDataDir: this.rutaSesion
+            userDataDir: this.rutaSesion,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         this.pagina = await this.navegador.newPage();
         await this.pagina.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -21,9 +22,6 @@ class ServicioWhatsAppNavegador {
     async validarNumero(numero) {
         const url = `https://web.whatsapp.com/send/?phone=57${numero}&text&type=phone_number&app_absent=0`;
         await this.pagina.goto(url, { waitUntil: 'domcontentloaded' });
-        
-        console.log(`[Servicio] Esperando carga para el número ${numero}...`);
-        
         const selectorValido = '[data-testid="conversation-info-header-chat-title"]';
         const selectorInvalido = '[data-testid="confirm-popup"]';
         const botonOkSelector = '[data-testid="popup-controls-ok"]';
